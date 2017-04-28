@@ -4,10 +4,7 @@ import jdk.internal.org.objectweb.asm.ClassReader
 import jdk.internal.org.objectweb.asm.ClassVisitor
 import jdk.internal.org.objectweb.asm.ClassWriter
 import jdk.internal.org.objectweb.asm.Opcodes
-import jdk.internal.org.objectweb.asm.tree.ClassNode
-import jdk.internal.org.objectweb.asm.tree.FieldInsnNode
-import jdk.internal.org.objectweb.asm.tree.LdcInsnNode
-import jdk.internal.org.objectweb.asm.tree.MethodInsnNode
+import jdk.internal.org.objectweb.asm.tree.*
 import java.lang.instrument.ClassFileTransformer
 import java.lang.instrument.Instrumentation
 import java.security.ProtectionDomain
@@ -33,7 +30,7 @@ class TestInvocationTransformer : ClassFileTransformer {
     }
 }
 
-class TransformationAdapter(val visitor: ClassVisitor) : ClassNode(Opcodes.ASM5), Opcodes {
+class TransformationAdapter(val visitor: ClassVisitor) : ClassNode(Opcodes.ASM5) {
     override fun visitEnd() {
         for (methodNode in methods) {
             for (instruction in methodNode.instructions) {
@@ -42,21 +39,7 @@ class TransformationAdapter(val visitor: ClassVisitor) : ClassNode(Opcodes.ASM5)
                     if (methodInstruction.name == "test") {
                         methodNode.instructions.insertBefore(
                                 methodInstruction,
-                                FieldInsnNode(Opcodes.GETSTATIC,
-                                        "java/lang/System",
-                                        "out",
-                                        "Ljava/io/PrintStream;")
-                        )
-                        methodNode.instructions.insertBefore(
-                                methodInstruction,
-                                LdcInsnNode("Test detected")
-                        )
-                        methodNode.instructions.insertBefore(
-                                methodInstruction,
-                                MethodInsnNode(Opcodes.INVOKEVIRTUAL,
-                                        "java/io/PrintStream",
-                                        "println",
-                                        "(Ljava/lang/Object;)V", false)
+                                printInstructions
                         )
 
                         /* Be sure that there enough stack slots
@@ -68,6 +51,28 @@ class TransformationAdapter(val visitor: ClassVisitor) : ClassNode(Opcodes.ASM5)
             }
         }
         accept(visitor)
+    }
+
+    companion object {
+        val printInstructions = InsnList()
+
+        init {
+            printInstructions.add(
+                    FieldInsnNode(Opcodes.GETSTATIC,
+                            "java/lang/System",
+                            "out",
+                            "Ljava/io/PrintStream;")
+            )
+            printInstructions.add(
+                    LdcInsnNode("Test detected")
+            )
+            printInstructions.add(
+                    MethodInsnNode(Opcodes.INVOKEVIRTUAL,
+                            "java/io/PrintStream",
+                            "println",
+                            "(Ljava/lang/Object;)V", false)
+            )
+        }
     }
 }
 
