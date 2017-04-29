@@ -39,7 +39,7 @@ class TransformationAdapter(val visitor: ClassVisitor) : ClassNode(Opcodes.ASM5)
                     if (methodInstruction.name == "test") {
                         methodNode.instructions.insertBefore(
                                 methodInstruction,
-                                printInstructions
+                                instructionList()
                         )
 
                         /* Be sure that there enough stack slots
@@ -53,26 +53,24 @@ class TransformationAdapter(val visitor: ClassVisitor) : ClassNode(Opcodes.ASM5)
         accept(visitor)
     }
 
-    companion object {
+    fun instructionList(): InsnList {
         val printInstructions = InsnList()
-
-        init {
-            printInstructions.add(
-                    FieldInsnNode(Opcodes.GETSTATIC,
-                            "java/lang/System",
-                            "out",
-                            "Ljava/io/PrintStream;")
-            )
-            printInstructions.add(
-                    LdcInsnNode("Test detected")
-            )
-            printInstructions.add(
-                    MethodInsnNode(Opcodes.INVOKEVIRTUAL,
-                            "java/io/PrintStream",
-                            "println",
-                            "(Ljava/lang/Object;)V", false)
-            )
-        }
+        printInstructions.add(
+                FieldInsnNode(Opcodes.GETSTATIC,
+                        "java/lang/System",
+                        "out",
+                        "Ljava/io/PrintStream;")
+        )
+        printInstructions.add(
+                LdcInsnNode("Test detected")
+        )
+        printInstructions.add(
+                MethodInsnNode(Opcodes.INVOKEVIRTUAL,
+                        "java/io/PrintStream",
+                        "println",
+                        "(Ljava/lang/Object;)V", false)
+        )
+        return printInstructions
     }
 }
 
