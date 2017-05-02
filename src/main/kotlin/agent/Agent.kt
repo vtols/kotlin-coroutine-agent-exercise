@@ -31,6 +31,9 @@ class TestInvocationTransformer : ClassFileTransformer {
 }
 
 class TransformationAdapter(val visitor: ClassVisitor) : ClassNode(Opcodes.ASM5) {
+    /*  Possibly we could utilize visitor pattern more
+        but for me this variant looks tidier as it is only test example
+     */
     override fun visitEnd() {
         for (methodNode in methods) {
             methodNode.instructions.iterator().asSequence()
@@ -56,6 +59,11 @@ class TransformationAdapter(val visitor: ClassVisitor) : ClassNode(Opcodes.ASM5)
                                         "(Ljava/lang/Object;)V", false)
                         )
                         methodNode.instructions.insertBefore(it, printInstructions)
+
+                        /* Be sure that there's enough stack slots
+                           as we have two additional objects on stack
+                         */
+                        methodNode.maxStack += 2
                     }
         }
         accept(visitor)
