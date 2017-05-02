@@ -31,21 +31,12 @@ class TestInvocationTransformer : ClassFileTransformer {
 }
 
 class TransformationAdapter(val visitor: ClassVisitor) : ClassNode(Opcodes.ASM5) {
-    companion object {
-        val testName = "test"
-        val testDesc = "(Lkotlin/coroutines/experimental/Continuation;)Ljava/lang/Object;"
-    }
-
     override fun visitEnd() {
         for (methodNode in methods) {
             methodNode.instructions.iterator().asSequence()
                     .filter {
-                        it.opcode == Opcodes.INVOKESTATIC &&
-                            when (it) {
-                                is MethodInsnNode ->
-                                    it.name == testName && it.desc == testDesc
-                                else -> false
-                            }
+                        it.opcode == Opcodes.INVOKESTATIC && it is MethodInsnNode && it.name == "test" &&
+                                it.desc == "(Lkotlin/coroutines/experimental/Continuation;)Ljava/lang/Object;"
                     }
                     .forEach {
                         val printInstructions = InsnList()
@@ -69,6 +60,5 @@ class TransformationAdapter(val visitor: ClassVisitor) : ClassNode(Opcodes.ASM5)
         }
         accept(visitor)
     }
-
 }
 
