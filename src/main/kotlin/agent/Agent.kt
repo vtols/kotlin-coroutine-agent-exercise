@@ -39,39 +39,36 @@ class TransformationAdapter(val visitor: ClassVisitor) : ClassNode(Opcodes.ASM5)
     override fun visitEnd() {
         for (methodNode in methods) {
             methodNode.instructions.iterator().asSequence()
-                    .filter { instructionIsInvokeTest(it) }
-                    .forEach { methodNode.instructions.insertBefore(it, instructionList()) }
+                    .filter {
+                        it.opcode == Opcodes.INVOKESTATIC &&
+                            when (it) {
+                                is MethodInsnNode ->
+                                    it.name == testName && it.desc == testDesc
+                                else -> false
+                            }
+                    }
+                    .forEach {
+                        val printInstructions = InsnList()
+                        printInstructions.add(
+                                FieldInsnNode(Opcodes.GETSTATIC,
+                                        "java/lang/System",
+                                        "out",
+                                        "Ljava/io/PrintStream;")
+                        )
+                        printInstructions.add(
+                                LdcInsnNode("Test detected")
+                        )
+                        printInstructions.add(
+                                MethodInsnNode(Opcodes.INVOKEVIRTUAL,
+                                        "java/io/PrintStream",
+                                        "println",
+                                        "(Ljava/lang/Object;)V", false)
+                        )
+                        methodNode.instructions.insertBefore(it, printInstructions)
+                    }
         }
         accept(visitor)
     }
 
-    fun instructionIsInvokeTest(instruction: AbstractInsnNode): Boolean {
-        return instruction.opcode == Opcodes.INVOKESTATIC &&
-            when (instruction) {
-                is MethodInsnNode ->
-                    instruction.name == testName && instruction.desc == testDesc
-                else -> false
-            }
-    }
-
-    fun instructionList(): InsnList {
-        val printInstructions = InsnList()
-        printInstructions.add(
-                FieldInsnNode(Opcodes.GETSTATIC,
-                        "java/lang/System",
-                        "out",
-                        "Ljava/io/PrintStream;")
-        )
-        printInstructions.add(
-                LdcInsnNode("Test detected")
-        )
-        printInstructions.add(
-                MethodInsnNode(Opcodes.INVOKEVIRTUAL,
-                        "java/io/PrintStream",
-                        "println",
-                        "(Ljava/lang/Object;)V", false)
-        )
-        return printInstructions
-    }
 }
 
