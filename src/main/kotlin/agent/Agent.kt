@@ -31,26 +31,27 @@ class TestInvocationTransformer : ClassFileTransformer {
 }
 
 class TransformationAdapter(val visitor: ClassVisitor) : ClassNode(Opcodes.ASM5) {
+    companion object {
+        val testName = "test"
+        val testDesc = "(Lkotlin/coroutines/experimental/Continuation;)Ljava/lang/Object;"
+    }
+
     override fun visitEnd() {
         for (methodNode in methods) {
-            for (instruction in methodNode.instructions) {
-                if (instruction.opcode == Opcodes.INVOKESTATIC) {
-                    val methodInstruction: MethodInsnNode = instruction as MethodInsnNode
-                    if (methodInstruction.name == "test") {
-                        methodNode.instructions.insertBefore(
-                                methodInstruction,
-                                instructionList()
-                        )
-
-                        /* Be sure that there enough stack slots
-                            as we have two additional objects on stack
-                         */
-                        methodNode.maxStack += 2
-                    }
-                }
-            }
+            methodNode.instructions.iterator().asSequence()
+                    .filter { instructionIsInvokeTest(it) }
+                    .forEach { methodNode.instructions.insertBefore(it, instructionList()) }
         }
         accept(visitor)
+    }
+
+    fun instructionIsInvokeTest(instruction: AbstractInsnNode): Boolean {
+        return instruction.opcode == Opcodes.INVOKESTATIC &&
+            when (instruction) {
+                is MethodInsnNode ->
+                    instruction.name == testName && instruction.desc == testDesc
+                else -> false
+            }
     }
 
     fun instructionList(): InsnList {
