@@ -38,7 +38,8 @@ class TransformationAdapter(val visitor: ClassVisitor) : ClassNode(Opcodes.ASM5)
         for (methodNode in methods) {
             methodNode.instructions.iterator().asSequence()
                     .filter {
-                        it.opcode == Opcodes.INVOKESTATIC && it is MethodInsnNode && it.name == "test" &&
+                        it.opcode == Opcodes.INVOKESTATIC && it is MethodInsnNode &&
+                                it.owner == "example/CoroutineExampleKt" && it.name == "test" &&
                                 it.desc == "(Lkotlin/coroutines/experimental/Continuation;)Ljava/lang/Object;"
                     }
                     .forEach {
